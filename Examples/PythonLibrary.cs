@@ -3,7 +3,7 @@ using IronPython.Hosting;
 
 namespace Exodrifter.UnityPython.Examples
 {
-	public class Library : MonoBehaviour
+	public class PythonLibrary : MonoBehaviour
 	{
 		void Start()
 		{

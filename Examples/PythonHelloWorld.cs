@@ -1,19 +1,21 @@
 ﻿using UnityEngine;
+using IronPython.Hosting;
 
 namespace Exodrifter.UnityPython.Examples
 {
-	public class HelloWorldUnity : MonoBehaviour
+	public class PythonHelloWorld : MonoBehaviour
 	{
 		void Start()
 		{
-			var engine = global::UnityPython.CreateEngine();
+			var engine = Python.CreateEngine();
 			var scope = engine.CreateScope();
 
-			string code = "import UnityEngine\n";
-			code += "UnityEngine.Debug.Log('Hello world!')";
+			string code = "str = 'Hello world!'";
 
 			var source = engine.CreateScriptSourceFromString(code);
 			source.Execute(scope);
+
+			Debug.Log(scope.GetVariable<string>("str"));
 		}
 	}
 }
