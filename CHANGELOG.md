@@ -14,5 +14,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 Initial support for Python in Unity3D with IronPython 2.6.2.
 
-[Unreleased]: https://github.com/exodrifter/unity-rumor/compare/0.0.0...HEAD
+[Unreleased]: https://github.com/exodrifter/unity-python/compare/0.0.0...HEAD
 [0.0.0]: https://github.com/exodrifter/unity-python/compare/f864edb...0.0.0
