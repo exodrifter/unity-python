@@ -12,9 +12,9 @@ instructions and examples.
 
 Setup
 =====
-Place the source of this project within a "Plugins" folder. For convenience,
-you can use the latest `.unitypackage` release from the [releases][] page to
-do this.
+Place the source of this project anywhere within your "Assets" folder. For
+convenience, you can use the latest `.unitypackage` release from the
+[releases][] page to do this.
 
 Then, go to `Edit > Project Settings > Player > Optimization` and select the
 `.NET 2.0` option for Api Compatability Level. If you do not take this step,
