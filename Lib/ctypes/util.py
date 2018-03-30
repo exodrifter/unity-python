@@ -1,7 +1,6 @@
-######################################################################
-#  This file should be kept compatible with Python 2.3, see PEP 291. #
-######################################################################
-import sys, os
+import os
+import subprocess
+import sys
 
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":
@@ -89,23 +88,28 @@ elif os.name == "posix":
     import re, tempfile, errno
 
     def _findLib_gcc(name):
+        # Run GCC's linker with the -t (aka --trace) option and examine the
+        # library name it prints out. The GCC command will fail because we
+        # haven't supplied a proper program with main(), but that does not
+        # matter.
         expr = r'[^\(\)\s]*lib%s\.[^\(\)\s]*' % re.escape(name)
-        fdout, ccout = tempfile.mkstemp()
-        os.close(fdout)
-        cmd = 'if type gcc >/dev/null 2>&1; then CC=gcc; elif type cc >/dev/null 2>&1; then CC=cc;else exit 10; fi;' \
-              '$CC -Wl,-t -o ' + ccout + ' 2>&1 -l' + name
+        cmd = 'if type gcc >/dev/null 2>&1; then CC=gcc; elif type cc >/dev/null 2>&1; then CC=cc;else exit; fi;' \
+              'LANG=C LC_ALL=C $CC -Wl,-t -o "$2" 2>&1 -l"$1"'
+
+        temp = tempfile.NamedTemporaryFile()
         try:
-            f = os.popen(cmd)
-            trace = f.read()
-            rv = f.close()
+            proc = subprocess.Popen((cmd, '_findLib_gcc', name, temp.name),
+                                    shell=True,
+                                    stdout=subprocess.PIPE)
+            [trace, _] = proc.communicate()
         finally:
             try:
-                os.unlink(ccout)
+                temp.close()
             except OSError, e:
+                # ENOENT is raised if the file was already removed, which is
+                # the normal behaviour of GCC if linking fails
                 if e.errno != errno.ENOENT:
                     raise
-        if rv == 10:
-            raise OSError, 'gcc or cc command not found'
         res = re.search(expr, trace)
         if not res:
             return None
@@ -117,8 +121,17 @@ elif os.name == "posix":
         def _get_soname(f):
             if not f:
                 return None
-            cmd = "/usr/ccs/bin/dump -Lpv 2>/dev/null " + f
-            res = re.search(r'\[.*\]\sSONAME\s+([^\s]+)', os.popen(cmd).read())
+
+            null = open(os.devnull, "wb")
+            try:
+                with null:
+                    proc = subprocess.Popen(("/usr/ccs/bin/dump", "-Lpv", f),
+                                            stdout=subprocess.PIPE,
+                                            stderr=null)
+            except OSError:  # E.g. command not found
+                return None
+            [data, _] = proc.communicate()
+            res = re.search(br'\[.*\]\sSONAME\s+([^\s]+)', data)
             if not res:
                 return None
             return res.group(1)
@@ -127,14 +140,12 @@ elif os.name == "posix":
             # assuming GNU binutils / ELF
             if not f:
                 return None
-            cmd = 'if ! type objdump >/dev/null 2>&1; then exit 10; fi;' \
-                  "objdump -p -j .dynamic 2>/dev/null " + f
-            f = os.popen(cmd)
-            dump = f.read()
-            rv = f.close()
-            if rv == 10:
-                raise OSError, 'objdump command not found'
-            res = re.search(r'\sSONAME\s+([^\s]+)', os.popen(cmd).read())
+            cmd = 'if ! type objdump >/dev/null 2>&1; then exit; fi;' \
+                  'objdump -p -j .dynamic 2>/dev/null "$1"'
+            proc = subprocess.Popen((cmd, '_get_soname', f), shell=True,
+                                    stdout=subprocess.PIPE)
+            [dump, _] = proc.communicate()
+            res = re.search(br'\sSONAME\s+([^\s]+)', dump)
             if not res:
                 return None
             return res.group(1)
@@ -145,39 +156,83 @@ elif os.name == "posix":
 
         def _num_version(libname):
             # "libxyz.so.MAJOR.MINOR" => [ MAJOR, MINOR ]
-            parts = libname.split(".")
+            parts = libname.split(b".")
             nums = []
             try:
                 while parts:
                     nums.insert(0, int(parts.pop()))
             except ValueError:
                 pass
-            return nums or [ sys.maxint ]
+            return nums or [sys.maxint]
 
         def find_library(name):
             ename = re.escape(name)
             expr = r':-l%s\.\S+ => \S*/(lib%s\.\S+)' % (ename, ename)
-            res = re.findall(expr,
-                             os.popen('/sbin/ldconfig -r 2>/dev/null').read())
+
+            null = open(os.devnull, 'wb')
+            try:
+                with null:
+                    proc = subprocess.Popen(('/sbin/ldconfig', '-r'),
+                                            stdout=subprocess.PIPE,
+                                            stderr=null)
+            except OSError:  # E.g. command not found
+                data = b''
+            else:
+                [data, _] = proc.communicate()
+
+            res = re.findall(expr, data)
             if not res:
                 return _get_soname(_findLib_gcc(name))
-            res.sort(cmp= lambda x,y: cmp(_num_version(x), _num_version(y)))
+            res.sort(key=_num_version)
             return res[-1]
 
-    else:
+    elif sys.platform == "sunos5":
 
-        def _findLib_ldconfig(name):
-            # XXX assuming GLIBC's ldconfig (with option -p)
-            expr = r'/[^\(\)\s]*lib%s\.[^\(\)\s]*' % re.escape(name)
-            res = re.search(expr,
-                            os.popen('/sbin/ldconfig -p 2>/dev/null').read())
-            if not res:
-                # Hm, this works only for libs needed by the python executable.
-                cmd = 'ldd %s 2>/dev/null' % sys.executable
-                res = re.search(expr, os.popen(cmd).read())
-                if not res:
-                    return None
-            return res.group(0)
+        def _findLib_crle(name, is64):
+            if not os.path.exists('/usr/bin/crle'):
+                return None
+
+            env = dict(os.environ)
+            env['LC_ALL'] = 'C'
+
+            if is64:
+                args = ('/usr/bin/crle', '-64')
+            else:
+                args = ('/usr/bin/crle',)
+
+            paths = None
+            null = open(os.devnull, 'wb')
+            try:
+                with null:
+                    proc = subprocess.Popen(args,
+                                            stdout=subprocess.PIPE,
+                                            stderr=null,
+                                            env=env)
+            except OSError:  # E.g. bad executable
+                return None
+            try:
+                for line in proc.stdout:
+                    line = line.strip()
+                    if line.startswith(b'Default Library Path (ELF):'):
+                        paths = line.split()[4]
+            finally:
+                proc.stdout.close()
+                proc.wait()
+
+            if not paths:
+                return None
+
+            for dir in paths.split(":"):
+                libfile = os.path.join(dir, "lib%s.so" % name)
+                if os.path.exists(libfile):
+                    return libfile
+
+            return None
+
+        def find_library(name, is64 = False):
+            return _get_soname(_findLib_crle(name, is64) or _findLib_gcc(name))
+
+    else:
 
         def _findSoname_ldconfig(name):
             import struct
@@ -195,10 +250,22 @@ elif os.name == "posix":
             abi_type = mach_map.get(machine, 'libc6')
 
             # XXX assuming GLIBC's ldconfig (with option -p)
-            expr = r'(\S+)\s+\((%s(?:, OS ABI:[^\)]*)?)\)[^/]*(/[^\(\)\s]*lib%s\.[^\(\)\s]*)' \
-                   % (abi_type, re.escape(name))
-            res = re.search(expr,
-                            os.popen('LANG=C /sbin/ldconfig -p 2>/dev/null').read())
+            expr = r'\s+(lib%s\.[^\s]+)\s+\(%s' % (re.escape(name), abi_type)
+
+            env = dict(os.environ)
+            env['LC_ALL'] = 'C'
+            env['LANG'] = 'C'
+            null = open(os.devnull, 'wb')
+            try:
+                with null:
+                    p = subprocess.Popen(['/sbin/ldconfig', '-p'],
+                                          stderr=null,
+                                          stdout=subprocess.PIPE,
+                                          env=env)
+            except OSError:  # E.g. command not found
+                return None
+            [data, _] = p.communicate()
+            res = re.search(expr, data)
             if not res:
                 return None
             return res.group(1)

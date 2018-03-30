@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+* Updated IronPython to 2.7.8
 
 ## [0.1.0]
 

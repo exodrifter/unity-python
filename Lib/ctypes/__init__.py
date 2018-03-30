@@ -1,6 +1,3 @@
-######################################################################
-#  This file should be kept compatible with Python 2.3, see PEP 291. #
-######################################################################
 """create and manipulate C data types in Python"""
 
 import os as _os, sys as _sys
@@ -262,6 +259,22 @@ class c_bool(_SimpleCData):
 
 from _ctypes import POINTER, pointer, _pointer_type_cache
 
+def _reset_cache():
+    _pointer_type_cache.clear()
+    _c_functype_cache.clear()
+    if _os.name in ("nt", "ce"):
+        _win_functype_cache.clear()
+    # _SimpleCData.c_wchar_p_from_param
+    POINTER(c_wchar).from_param = c_wchar_p.from_param
+    # _SimpleCData.c_char_p_from_param
+    POINTER(c_char).from_param = c_char_p.from_param
+    _pointer_type_cache[None] = c_void_p
+    # XXX for whatever reasons, creating the first instance of a callback
+    # function is needed for the unittests on Win64 to succeed.  This MAY
+    # be a compiler bug, since the problem occurs only when _ctypes is
+    # compiled with the MS SDK compiler.  Or an uninitialized variable?
+    CFUNCTYPE(c_int)(lambda: None)
+
 try:
     from _ctypes import set_conversion_mode
 except ImportError:
@@ -277,8 +290,6 @@ else:
 
     class c_wchar(_SimpleCData):
         _type_ = "u"
-
-    POINTER(c_wchar).from_param = c_wchar_p.from_param #_SimpleCData.c_wchar_p_from_param
 
     def create_unicode_buffer(init, size=None):
         """create_unicode_buffer(aString) -> character array
@@ -297,8 +308,6 @@ else:
             buf = buftype()
             return buf
         raise TypeError(init)
-
-POINTER(c_char).from_param = c_char_p.from_param #_SimpleCData.c_char_p_from_param
 
 # XXX Deprecated
 def SetPointerType(pointer, cls):
@@ -333,6 +342,10 @@ class CDLL(object):
     """
     _func_flags_ = _FUNCFLAG_CDECL
     _func_restype_ = c_int
+    # default values for repr
+    _name = '<uninitialized>'
+    _handle = 0
+    _FuncPtr = None
 
     def __init__(self, name, mode=DEFAULT_MODE, handle=None,
                  use_errno=False,
@@ -374,8 +387,8 @@ class CDLL(object):
         return func
 
 class PyDLL(CDLL):
-    """This class represents the Python library itself.  It allows to
-    access Python API functions.  The GIL is not released, and
+    """This class represents the Python library itself.  It allows
+    accessing Python API functions.  The GIL is not released, and
     Python exceptions are handled correctly.
     """
     _func_flags_ = _FUNCFLAG_CDECL | _FUNCFLAG_PYTHONAPI
@@ -437,6 +450,8 @@ if _os.name in ("nt", "ce"):
     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
 elif _sys.platform == "cygwin":
     pythonapi = PyDLL("libpython%d.%d.dll" % _sys.version_info[:2])
+elif _sys.platform == "cli": # Need to determine how to do this
+    pythonapi = None
 else:
     pythonapi = PyDLL(None)
 
@@ -458,14 +473,15 @@ if _os.name in ("nt", "ce"):
             descr = FormatError(code).strip()
         return WindowsError(code, descr)
 
-_pointer_type_cache[None] = c_void_p
-
 if sizeof(c_uint) == sizeof(c_void_p):
     c_size_t = c_uint
+    c_ssize_t = c_int
 elif sizeof(c_ulong) == sizeof(c_void_p):
     c_size_t = c_ulong
+    c_ssize_t = c_long
 elif sizeof(c_ulonglong) == sizeof(c_void_p):
     c_size_t = c_ulonglong
+    c_ssize_t = c_longlong
 
 # functions
 
@@ -539,8 +555,4 @@ for kind in [c_ushort, c_uint, c_ulong, c_ulonglong]:
     elif sizeof(kind) == 8: c_uint64 = kind
 del(kind)
 
-# XXX for whatever reasons, creating the first instance of a callback
-# function is needed for the unittests on Win64 to succeed.  This MAY
-# be a compiler bug, since the problem occurs only when _ctypes is
-# compiled with the MS SDK compiler.  Or an uninitialized variable?
-CFUNCTYPE(c_int)(lambda: None)
+_reset_cache()

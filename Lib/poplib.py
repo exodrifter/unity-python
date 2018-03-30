@@ -33,7 +33,7 @@ LF = '\n'
 CRLF = CR+LF
 
 # maximal line length when calling readline(). This is to prevent
-# reading arbitrary lenght lines. RFC 1939 limits POP3 line length to
+# reading arbitrary length lines. RFC 1939 limits POP3 line length to
 # 512 characters, including CRLF. We have selected 2048 just to be on
 # the safe side.
 _MAXLINE = 2048
@@ -112,7 +112,6 @@ class POP3:
         line = self.file.readline(_MAXLINE + 1)
         if len(line) > _MAXLINE:
             raise error_proto('line too long')
-
         if self._debugging > 1: print '*get*', repr(line)
         if not line: raise error_proto('-ERR EOF')
         octets = len(line)
@@ -330,7 +329,7 @@ else:
 
                hostname - the hostname of the pop3 over ssl server
                port - port number
-               keyfile - PEM formatted file that countains your private key
+               keyfile - PEM formatted file that contains your private key
                certfile - PEM formatted certificate chain file
 
             See the methods of the parent class POP3 for more documentation.
@@ -372,11 +371,10 @@ else:
             line = ""
             renewline = re.compile(r'.*?\n')
             match = renewline.match(self.buffer)
-
             while not match:
+                self._fillBuffer()
                 if len(self.buffer) > _MAXLINE:
                     raise error_proto('line too long')
-                self._fillBuffer()
                 match = renewline.match(self.buffer)
             line = match.group(0)
             self.buffer = renewline.sub('' ,self.buffer, 1)
