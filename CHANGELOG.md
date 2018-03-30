@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+* Added options parameter to `UnityPython.CreateEngine`
+
+### Changed
+* Updated IronPython to 2.7.8
 
 ## [0.1.0]
 

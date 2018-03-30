@@ -42,7 +42,7 @@ _TYPE_MAPPING = {
         'NotImplementedType' : 'type(NotImplemented)',
         'SliceType' : 'slice',
         'StringType': 'bytes', # XXX ?
-        'StringTypes' : 'str', # XXX ?
+        'StringTypes' : '(str,)', # XXX ?
         'TupleType': 'tuple',
         'TypeType' : 'type',
         'UnicodeType': 'str',
@@ -52,7 +52,7 @@ _TYPE_MAPPING = {
 _pats = ["power< 'types' trailer< '.' name='%s' > >" % t for t in _TYPE_MAPPING]
 
 class FixTypes(fixer_base.BaseFix):
-
+    BM_compatible = True
     PATTERN = '|'.join(_pats)
 
     def transform(self, node, results):

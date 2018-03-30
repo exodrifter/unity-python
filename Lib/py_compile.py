@@ -61,15 +61,6 @@ class PyCompileError(Exception):
         return self.msg
 
 
-# Define an internal helper according to the platform
-if os.name == "mac":
-    import MacOS
-    def set_creator_type(file):
-        MacOS.SetCreatorAndType(file, 'Pyth', 'PYC ')
-else:
-    def set_creator_type(file):
-        pass
-
 def wr_long(f, x):
     """Internal; write a 32-bit int to a file in little-endian order."""
     f.write(chr( x        & 0xff))
@@ -78,69 +69,12 @@ def wr_long(f, x):
     f.write(chr((x >> 24) & 0xff))
 
 def compile(file, cfile=None, dfile=None, doraise=False):
-    """Byte-compile one Python source file to Python bytecode.
+    """Does nothing on IronPython.
 
-    Arguments:
-
-    file:    source filename
-    cfile:   target filename; defaults to source with 'c' or 'o' appended
-             ('c' normally, 'o' in optimizing mode, giving .pyc or .pyo)
-    dfile:   purported filename; defaults to source (this is the filename
-             that will show up in error messages)
-    doraise: flag indicating whether or not an exception should be
-             raised when a compile error is found. If an exception
-             occurs and this flag is set to False, a string
-             indicating the nature of the exception will be printed,
-             and the function will return to the caller. If an
-             exception occurs and this flag is set to True, a
-             PyCompileError exception will be raised.
-
-    Note that it isn't necessary to byte-compile Python modules for
-    execution efficiency -- Python itself byte-compiles a module when
-    it is loaded, and if it can, writes out the bytecode to the
-    corresponding .pyc (or .pyo) file.
-
-    However, if a Python installation is shared between users, it is a
-    good idea to byte-compile all modules upon installation, since
-    other users may not be able to write in the source directories,
-    and thus they won't be able to write the .pyc/.pyo file, and then
-    they would be byte-compiling every module each time it is loaded.
-    This can slow down program start-up considerably.
-
-    See compileall.py for a script/module that uses this module to
-    byte-compile all installed files (or all files in selected
-    directories).
-
+    IronPython does not currently support compiling to .pyc
+    or any other format.
     """
-    f = open(file, 'U')
-    try:
-        timestamp = long(os.fstat(f.fileno()).st_mtime)
-    except AttributeError:
-        timestamp = long(os.stat(file).st_mtime)
-    codestring = f.read()
-    f.close()
-    if codestring and codestring[-1] != '\n':
-        codestring = codestring + '\n'
-    try:
-        codeobject = __builtin__.compile(codestring, dfile or file,'exec')
-    except Exception,err:
-        py_exc = PyCompileError(err.__class__,err.args,dfile or file)
-        if doraise:
-            raise py_exc
-        else:
-            sys.stderr.write(py_exc.msg + '\n')
-            return
-    if cfile is None:
-        cfile = file + (__debug__ and 'c' or 'o')
-    fc = open(cfile, 'wb')
-    fc.write('\0\0\0\0')
-    wr_long(fc, timestamp)
-    marshal.dump(codeobject, fc)
-    fc.flush()
-    fc.seek(0, 0)
-    fc.write(MAGIC)
-    fc.close()
-    set_creator_type(cfile)
+    return # not supported on IronPython, so return unconditionally
 
 def main(args=None):
     """Compile several source files.
@@ -149,19 +83,35 @@ def main(args=None):
     not specified) are compiled and the resulting bytecode is cached
     in the normal manner.  This function does not search a directory
     structure to locate source files; it only compiles files named
-    explicitly.
+    explicitly.  If '-' is the only parameter in args, the list of
+    files is taken from standard input.
 
     """
     if args is None:
         args = sys.argv[1:]
     rv = 0
-    for filename in args:
-        try:
-            compile(filename, doraise=True)
-        except PyCompileError, err:
-            # return value to indicate at least one failure
-            rv = 1
-            sys.stderr.write(err.msg)
+    if args == ['-']:
+        while True:
+            filename = sys.stdin.readline()
+            if not filename:
+                break
+            filename = filename.rstrip('\n')
+            try:
+                compile(filename, doraise=True)
+            except PyCompileError as error:
+                rv = 1
+                sys.stderr.write("%s\n" % error.msg)
+            except IOError as error:
+                rv = 1
+                sys.stderr.write("%s\n" % error)
+    else:
+        for filename in args:
+            try:
+                compile(filename, doraise=True)
+            except PyCompileError as error:
+                # return value to indicate at least one failure
+                rv = 1
+                sys.stderr.write("%s\n" % error.msg)
     return rv
 
 if __name__ == "__main__":

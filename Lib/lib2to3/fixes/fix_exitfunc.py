@@ -9,6 +9,8 @@ from lib2to3.fixer_util import Name, Attr, Call, Comma, Newline, syms
 
 
 class FixExitfunc(fixer_base.BaseFix):
+    keep_line_order = True
+    BM_compatible = True
 
     PATTERN = """
               (
@@ -33,7 +35,7 @@ class FixExitfunc(fixer_base.BaseFix):
         self.sys_import = None
 
     def transform(self, node, results):
-        # First, find a the sys import. We'll just hope it's global scope.
+        # First, find the sys import. We'll just hope it's global scope.
         if "sys_import" in results:
             if self.sys_import is None:
                 self.sys_import = results["sys_import"]

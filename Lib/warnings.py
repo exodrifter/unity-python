@@ -7,7 +7,8 @@ import linecache
 import sys
 import types
 
-__all__ = ["warn", "showwarning", "formatwarning", "filterwarnings",
+__all__ = ["warn", "warn_explicit", "showwarning",
+           "formatwarning", "filterwarnings", "simplefilter",
            "resetwarnings", "catch_warnings"]
 
 
@@ -25,9 +26,12 @@ def _show_warning(message, category, filename, lineno, file=None, line=None):
     """Hook to write a warning to a file; replace if you like."""
     if file is None:
         file = sys.stderr
+        if file is None:
+            # sys.stderr is None - warnings get lost
+            return
     try:
         file.write(formatwarning(message, category, filename, lineno, line))
-    except IOError:
+    except (IOError, UnicodeError):
         pass # the file (probably stderr) is invalid - this warning gets lost.
 # Keep a working version around in case the deprecation of the old API is
 # triggered.
@@ -35,18 +39,43 @@ showwarning = _show_warning
 
 def formatwarning(message, category, filename, lineno, line=None):
     """Function to format a warning the standard way."""
-    s =  "%s:%s: %s: %s\n" % (filename, lineno, category.__name__, message)
+    try:
+        unicodetype = unicode
+    except NameError:
+        unicodetype = ()
+    try:
+        message = str(message)
+    except UnicodeEncodeError:
+        pass
+    s =  "%s: %s: %s\n" % (lineno, category.__name__, message)
     line = linecache.getline(filename, lineno) if line is None else line
     if line:
         line = line.strip()
+        if isinstance(s, unicodetype) and isinstance(line, str):
+            line = unicode(line, 'latin1')
         s += "  %s\n" % line
+    if isinstance(s, unicodetype) and isinstance(filename, str):
+        enc = sys.getfilesystemencoding()
+        if enc:
+            try:
+                filename = unicode(filename, enc)
+            except UnicodeDecodeError:
+                pass
+    s = "%s:%s" % (filename, s)
     return s
 
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,
                    append=0):
     """Insert an entry into the list of warnings filters (at the front).
 
-    Use assertions to check that all arguments have the right type."""
+    'action' -- one of "error", "ignore", "always", "default", "module",
+                or "once"
+    'message' -- a regex that the warning message must match
+    'category' -- a class that the warning must be a subclass of
+    'module' -- a regex that the module name must match
+    'lineno' -- an integer line number, 0 matches all warnings
+    'append' -- if true, append to the list of filters
+    """
     import re
     assert action in ("error", "ignore", "always", "default", "module",
                       "once"), "invalid action: %r" % (action,)
@@ -55,10 +84,10 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
            "category must be a class"
     assert issubclass(category, Warning), "category must be a Warning subclass"
     assert isinstance(module, basestring), "module must be a string"
-    assert isinstance(lineno, int) and lineno >= 0, \
+    assert isinstance(lineno, (int, long)) and lineno >= 0, \
            "lineno must be an int >= 0"
     item = (action, re.compile(message, re.I), category,
-            re.compile(module), lineno)
+            re.compile(module), int(lineno))
     if append:
         filters.append(item)
     else:
@@ -68,12 +97,17 @@ def simplefilter(action, category=Warning, lineno=0, append=0):
     """Insert a simple entry into the list of warnings filters (at the front).
 
     A simple filter matches all modules and messages.
+    'action' -- one of "error", "ignore", "always", "default", "module",
+                or "once"
+    'category' -- a class that the warning must be a subclass of
+    'lineno' -- an integer line number, 0 matches all warnings
+    'append' -- if true, append to the list of filters
     """
     assert action in ("error", "ignore", "always", "default", "module",
                       "once"), "invalid action: %r" % (action,)
-    assert isinstance(lineno, int) and lineno >= 0, \
+    assert isinstance(lineno, (int, long)) and lineno >= 0, \
            "lineno must be an int >= 0"
-    item = (action, None, category, None, lineno)
+    item = (action, None, category, None, int(lineno))
     if append:
         filters.append(item)
     else:
@@ -262,24 +296,6 @@ def warn_explicit(message, category, filename, lineno,
         raise RuntimeError(
               "Unrecognized action (%r) in warnings.filters:\n %s" %
               (action, item))
-    # Warn if showwarning() does not support the 'line' argument.
-    # Don't use 'inspect' as it relies on an extension module, which break the
-    # build thanks to 'warnings' being imported by setup.py.
-    fxn_code = None
-    if hasattr(showwarning, 'func_code'):
-        fxn_code = showwarning.func_code
-    elif hasattr(showwarning, '__func__'):
-        fxn_code = showwarning.__func__.func_code
-    if fxn_code:
-        args = fxn_code.co_varnames[:fxn_code.co_argcount]
-        CO_VARARGS = 0x4
-        if 'line' not in args and not fxn_code.co_flags & CO_VARARGS:
-            showwarning_msg = ("functions overriding warnings.showwarning() "
-                                "must support the 'line' argument")
-            if message == showwarning_msg:
-                _show_warning(message, category, filename, lineno)
-            else:
-                warn(showwarning_msg, DeprecationWarning)
     # Print message and context
     showwarning(message, category, filename, lineno)
 
@@ -293,9 +309,12 @@ class WarningMessage(object):
 
     def __init__(self, message, category, filename, lineno, file=None,
                     line=None):
-        local_values = locals()
-        for attr in self._WARNING_DETAILS:
-            setattr(self, attr, local_values[attr])
+        self.message = message
+        self.category = category
+        self.filename = filename
+        self.lineno = lineno
+        self.file = file
+        self.line = line
         self._category_name = category.__name__ if category else None
 
     def __str__(self):
@@ -389,8 +408,12 @@ except ImportError:
 # Module initialization
 _processoptions(sys.warnoptions)
 if not _warnings_defaults:
-    simplefilter("ignore", category=PendingDeprecationWarning, append=1)
-    simplefilter("ignore", category=ImportWarning, append=1)
+    silence = [ImportWarning, PendingDeprecationWarning]
+    # Don't silence DeprecationWarning if -3 or -Q was used.
+    if not sys.py3kwarning and not sys.flags.division_warning:
+        silence.append(DeprecationWarning)
+    for cls in silence:
+        simplefilter("ignore", category=cls)
     bytes_warning = sys.flags.bytes_warning
     if bytes_warning > 1:
         bytes_action = "error"

@@ -19,6 +19,7 @@ __all__ = ["Driver", "load_grammar"]
 import codecs
 import os
 import logging
+import StringIO
 import sys
 
 # Pgen imports
@@ -101,16 +102,15 @@ class Driver(object):
 
     def parse_string(self, text, debug=False):
         """Parse a string and return the syntax tree."""
-        tokens = tokenize.generate_tokens(generate_lines(text).next)
+        tokens = tokenize.generate_tokens(StringIO.StringIO(text).readline)
         return self.parse_tokens(tokens, debug)
 
 
-def generate_lines(text):
-    """Generator that behaves like readline without using StringIO."""
-    for line in text.splitlines(True):
-        yield line
-    while True:
-        yield ""
+def _generate_pickle_name(gt):
+    head, tail = os.path.splitext(gt)
+    if tail == ".txt":
+        tail = ""
+    return head + tail + ".".join(map(str, sys.version_info)) + ".pickle"
 
 
 def load_grammar(gt="Grammar.txt", gp=None,
@@ -118,11 +118,7 @@ def load_grammar(gt="Grammar.txt", gp=None,
     """Load the grammar (maybe from a pickle)."""
     if logger is None:
         logger = logging.getLogger()
-    if gp is None:
-        head, tail = os.path.splitext(gt)
-        if tail == ".txt":
-            tail = ""
-        gp = head + tail + ".".join(map(str, sys.version_info)) + ".pickle"
+    gp = _generate_pickle_name(gt) if gp is None else gp
     if force or not _newer(gp, gt):
         logger.info("Generating grammar tables from %s", gt)
         g = pgen.generate_grammar(gt)
@@ -130,8 +126,8 @@ def load_grammar(gt="Grammar.txt", gp=None,
             logger.info("Writing grammar tables to %s", gp)
             try:
                 g.dump(gp)
-            except IOError, e:
-                logger.info("Writing failed:"+str(e))
+            except IOError as e:
+                logger.info("Writing failed: %s", e)
     else:
         g = grammar.Grammar()
         g.load(gp)
@@ -145,3 +141,20 @@ def _newer(a, b):
     if not os.path.exists(b):
         return True
     return os.path.getmtime(a) >= os.path.getmtime(b)
+
+
+def main(*args):
+    """Main program, when run as a script: produce grammar pickle files.
+
+    Calls load_grammar for each argument, a path to a grammar text file.
+    """
+    if not args:
+        args = sys.argv[1:]
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout,
+                        format='%(message)s')
+    for gt in args:
+        load_grammar(gt, save=True, force=True)
+    return True
+
+if __name__ == "__main__":
+    sys.exit(int(not main()))

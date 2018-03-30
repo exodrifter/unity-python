@@ -27,18 +27,6 @@ def _formatparam(param, value=None, quote=1):
         return param
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 class Headers:
 
     """Manage a collection of HTTP response headers"""
@@ -71,14 +59,10 @@ class Headers:
         Return None if the header is missing instead of raising an exception.
 
         Note that if the header appeared multiple times, the first exactly which
-        occurrance gets returned is undefined.  Use getall() to get all
+        occurrence gets returned is undefined.  Use getall() to get all
         the values matching a header field name.
         """
         return self.get(name)
-
-
-
-
 
     def has_key(self, name):
         """Return true if the message contains the header."""
@@ -117,9 +101,6 @@ class Headers:
         list.
         """
         return [k for k, v in self._headers]
-
-
-
 
     def values(self):
         """Return a list of all header values.
@@ -161,7 +142,6 @@ class Headers:
         else:
             return result
 
-
     def add_header(self, _name, _value, **_params):
         """Extended header setting.
 
@@ -187,19 +167,3 @@ class Headers:
             else:
                 parts.append(_formatparam(k.replace('_', '-'), v))
         self._headers.append((_name, "; ".join(parts)))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#
