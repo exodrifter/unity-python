@@ -1114,6 +1114,11 @@
             CultureInfo.
             </summary>
         </member>
+        <member name="T:IronPython.Modules.PythonRandom.RandomGen">
+            <summary>
+            Generator based on the .NET Core implementation of System.Random
+            </summary>
+        </member>
         <member name="F:IronPython.Modules.PythonSocket.socket._handleToSocket">
             <summary>
             handleToSocket allows us to translate from Python's idea of a socket resource (file

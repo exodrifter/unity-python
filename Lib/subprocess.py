@@ -79,6 +79,10 @@ elif mono:
 else:
     import select
     _has_poll = hasattr(select, 'poll')
+    try:
+        import threading
+    except ImportError:
+        threading = None
     import fcntl
     import pickle
 
@@ -816,9 +820,6 @@ class Popen(object):
 
     elif mono:
         def _get_handles(self, stdin, stdout, stderr):
-            if stdin is None and stdout is None and stderr is None:
-                return (None, None, None, None, None, None)
-
             to_close = set()
             p2cread, p2cwrite = None, None
             c2pread, c2pwrite = None, None
@@ -1041,6 +1042,21 @@ class Popen(object):
                         pass
 
 
+        # Used as a bandaid workaround for https://bugs.python.org/issue27448
+        # to prevent multiple simultaneous subprocess launches from interfering
+        # with one another and leaving gc disabled.
+        if threading:
+            _disabling_gc_lock = threading.Lock()
+        else:
+            class _noop_context_manager(object):
+                # A dummy context manager that does nothing for the rare
+                # user of a --without-threads build.
+                def __enter__(self): pass
+                def __exit__(self, *args): pass
+
+            _disabling_gc_lock = _noop_context_manager()
+
+
         def _execute_child(self, args, executable, preexec_fn, close_fds,
                            cwd, env, universal_newlines,
                            startupinfo, creationflags, shell, to_close,
@@ -1072,10 +1088,12 @@ class Popen(object):
             errpipe_read, errpipe_write = self.pipe_cloexec()
             try:
                 try:
-                    gc_was_enabled = gc.isenabled()
-                    # Disable gc to avoid bug where gc -> file_dealloc ->
-                    # write to stderr -> hang.  http://bugs.python.org/issue1336
-                    gc.disable()
+                    with self._disabling_gc_lock:
+                        gc_was_enabled = gc.isenabled()
+                        # Disable gc to avoid bug where gc -> file_dealloc ->
+                        # write to stderr -> hang.
+                        # https://bugs.python.org/issue1336
+                        gc.disable()
                     try:
                         self.pid = os.fork()
                     except:
@@ -1149,9 +1167,10 @@ class Popen(object):
                             exc_value.child_traceback = ''.join(exc_lines)
                             os.write(errpipe_write, pickle.dumps(exc_value))
 
-                        # This exitcode won't be reported to applications, so it
-                        # really doesn't matter what we return.
-                        os._exit(255)
+                        finally:
+                            # This exitcode won't be reported to applications, so it
+                            # really doesn't matter what we return.
+                            os._exit(255)
 
                     # Parent
                     if gc_was_enabled:

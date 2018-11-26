@@ -168,9 +168,21 @@
             Gets the number of positional arguments the user provided at the call site.
             </summary>
         </member>
+        <member name="P:Microsoft.Scripting.Actions.Calls.ActualArguments.SplatIndex">
+            <summary>
+            Gets the index into _args array indicating the first post-splat argument or -1 of there are no splatted arguments.
+            For call site f(a,b,*c,d) and preSplatLimit == 1 and postSplatLimit == 2
+            args would be (a,b,c[0],c[n-2],c[n-1],d) with splat index 3, where n = c.Count.
+            </summary>
+        </member>
         <member name="P:Microsoft.Scripting.Actions.Calls.ActualArguments.Count">
             <summary>
             The number of arguments not counting the collapsed ones.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Scripting.Actions.Calls.ActualArguments.HiddenCount">
+            <summary>
+            Gets the number of hidden arguments (used for error reporting).
             </summary>
         </member>
         <member name="P:Microsoft.Scripting.Actions.Calls.ActualArguments.VisibleCount">
@@ -182,7 +194,6 @@
             <summary>
             Binds named arguments to the parameters. Returns a permutation of indices that captures the relationship between 
             named arguments and their corresponding parameters. Checks for duplicate and unbound named arguments.
-            
             Ensures that for all i: namedArgs[i] binds to parameters[args.Length + bindingPermutation[i]] 
             </summary>
         </member>
@@ -714,6 +725,11 @@
             The method is called each time an item of lazily splatted argument is needed.
             </summary>
         </member>
+        <member name="P:Microsoft.Scripting.Actions.Calls.ParameterMapping.ArgIndex">
+            <summary>
+            Gets the next argument to consume.
+            </summary>
+        </member>
         <member name="M:Microsoft.Scripting.Actions.Calls.ParameterMapping.MapParameterReduceByRef(System.Reflection.ParameterInfo)">
             <summary>
             Maps out parameters to return args and ref parameters to ones that don't accept StrongBox.
@@ -793,6 +809,11 @@
         <member name="M:Microsoft.Scripting.Actions.Calls.SimpleArgBuilder.#ctor(System.Reflection.ParameterInfo,System.Int32)">
             <summary>
             Type and whether the parameter is a params-array or params-dictionary is derived from info.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Scripting.Actions.Calls.SimpleArgBuilder.Index">
+            <summary>
+            Gets the index of actual argument expression.
             </summary>
         </member>
         <member name="M:Microsoft.Scripting.Actions.Calls.TypeInferer.GetGenericArgumentsForInferedMethod(Microsoft.Scripting.Actions.Calls.OverloadInfo,System.Collections.Generic.Dictionary{System.Type,System.Type})">
@@ -928,11 +949,8 @@
         </member>
         <member name="T:Microsoft.Scripting.Actions.Calls.InferenceResult">
             <summary>
-            Provides information about the result of a custom object which dynamically
-            infers back types.
-            
-            Currently only used for invokable objects to feedback the types for a delegate
-            type.
+            Provides information about the result of a custom object which dynamically infers back types.
+            Currently only used for invokable objects to feedback the types for a delegate type.
             </summary>
         </member>
         <member name="T:Microsoft.Scripting.Actions.ComboActionRewriter">
@@ -4073,7 +4091,7 @@
         </member>
         <member name="P:Microsoft.Scripting.Strings.InvalidPath">
             <summary>
-            A string like  "pecified path is invalid."
+            A string like  "Specified path is invalid."
             </summary>
         </member>
         <member name="P:Microsoft.Scripting.Strings.DictionaryNotHashable">
@@ -4446,7 +4464,7 @@
         </member>
         <member name="M:Microsoft.Scripting.Error.InvalidPath">
             <summary>
-            ArgumentException with message like "pecified path is invalid."
+            ArgumentException with message like "Specified path is invalid."
             </summary>
         </member>
         <member name="M:Microsoft.Scripting.Error.DictionaryNotHashable">
@@ -5299,7 +5317,7 @@
         </member>
         <member name="M:Microsoft.Scripting.Hosting.Shell.CommandLine.RunOneInteraction">
             <summary>
-            Parses a single interactive command or a set of statements and executes it.  
+            Parses a single interactive command or a set of statements and executes it.
             
             Returns null if successful and execution should continue, or the appropiate exit code.
             
@@ -8365,7 +8383,7 @@
             Read a new buffer from the current input stream, update the adler32 and total number of bytes read.  All <see cref="M:ComponentAce.Compression.Libs.ZLib.ZStream.deflate(ComponentAce.Compression.Libs.ZLib.FlushStrategy)" /> input goes 
             through this function so some applications may wish to modify it to avoid allocating a large <see cref="P:ComponentAce.Compression.Libs.ZLib.ZStream.next_in" /> buffer and copying from it.
             </summary>
-            <seealso cref="!:flush_pending"/>
+            <seealso cref="M:ComponentAce.Compression.Libs.ZLib.ZStream.FlushPending"/>
         </member>
         <member name="M:ComponentAce.Compression.Libs.ZLib.ZStream.free">
             <summary>
