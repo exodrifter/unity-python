@@ -2782,12 +2782,6 @@
             If the collection is already an  array of T the original collection is returned.
             </summary>
         </member>
-        <member name="T:Microsoft.Scripting.Utils.CheckedDictionaryEnumerator">
-            <summary>
-            Not all .NET enumerators throw exceptions if accessed in an invalid state. This type
-            can be used to throw exceptions from enumerators implemented in IronPython.
-            </summary>
-        </member>
         <member name="M:Microsoft.Scripting.Utils.CollectionExtensions.ToReadOnly``1(System.Collections.Generic.IEnumerable{``0})">
             <summary>
             Wraps the provided enumerable into a ReadOnlyCollection{T}
@@ -2836,11 +2830,6 @@
             <summary>
             Emits an object delegate(CallSite, object * paramCount, object) that's suitable for use in a non-strongly typed call site.
             Use this helper only for delegates with more parameters than Func has.
-            </summary>
-        </member>
-        <member name="T:Microsoft.Scripting.Utils.DictionaryUnionEnumerator">
-            <summary>
-            Presents a flat enumerable view of multiple dictionaries
             </summary>
         </member>
         <member name="T:Microsoft.Scripting.SourceCodeReader">

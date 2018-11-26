@@ -2550,6 +2550,11 @@
             string providing this method
             </summary>
         </member>
+        <member name="M:IronPython.Runtime.ByteArray.op_Addition(IronPython.Runtime.ByteArray,System.String)">
+            <summary>
+            This overload is specifically implemented because in IronPython strings are unicode
+            </summary>
+        </member>
         <member name="M:IronPython.Runtime.Bytes.istitle">
             <summary>
             return true if self is a titlecased string and there is at least one
