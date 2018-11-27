@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+* Added a missing DLL `Microsoft.Scripting.Metadata` that is required
+  to build
+
 
 ## [0.3.0]
 
