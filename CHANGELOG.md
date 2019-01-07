@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+* IronPython output is now redirected to the Unity console
+
 ### Fixed
 * Fix problem where not all types in the `UnityEngine` namespace could be
   imported
