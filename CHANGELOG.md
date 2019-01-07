@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+* Fix problem where not all types in the `UnityEngine` namespace could be
+  imported
+
 
 ## [0.3.1]
 
