@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+
+## [0.4.1]
+
 ## Fixed
 * Fix error output being redirected to `Debug.Log` instead of `Debug.LogError`
 
@@ -52,7 +55,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 Initial support for Python in Unity3D with IronPython 2.6.2.
 
-[Unreleased]: https://github.com/exodrifter/unity-python/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/exodrifter/unity-python/compare/0.4.1...HEAD
+[0.4.1]: https://github.com/exodrifter/unity-python/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/exodrifter/unity-python/compare/0.3.1...0.4.0
 [0.3.1]: https://github.com/exodrifter/unity-python/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/exodrifter/unity-python/compare/0.2.0...0.3.0
