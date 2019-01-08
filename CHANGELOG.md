@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## Fixed
+* Fix error output being redirected to `Debug.Log` instead of `Debug.LogError`
+
 
 ## [0.4.0]
 

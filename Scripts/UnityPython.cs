@@ -28,7 +28,7 @@ public static class UnityPython
 		engine.Runtime.IO.SetOutput(infoStream, infoWriter);
 
 		var errorStream = new MemoryStream();
-		var errorWriter = new UnityLogWriter(Debug.Log, errorStream);
+		var errorWriter = new UnityLogWriter(Debug.LogError, errorStream);
 		engine.Runtime.IO.SetErrorOutput(errorStream, errorWriter);
 
 
