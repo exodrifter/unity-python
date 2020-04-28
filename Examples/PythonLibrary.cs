@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using IronPython.Hosting;
+using IronPython.Runtime;
 
 namespace Exodrifter.UnityPython.Examples
 {
@@ -23,6 +24,12 @@ filename = os.path.abspath ('test.txt');";
 
 			var source = engine.CreateScriptSourceFromString(code);
 			source.Execute(scope);
+
+			// First, compile the python module to a dll
+			// ClrModule.CompileModules();
+
+			// Then, load it
+			engine.ImportModule("ctypes");
 
 			Debug.Log(scope.GetVariable<string>("filename"));
 		}

@@ -31,20 +31,20 @@ public static class UnityPython
 		var errorWriter = new UnityLogWriter(Debug.LogError, errorStream);
 		engine.Runtime.IO.SetErrorOutput(errorStream, errorWriter);
 
-
 		// Load assemblies for the `UnityEngine*` namespaces
 		foreach (var assembly in GetAssembliesInNamespace("UnityEngine"))
 		{
 			engine.Runtime.LoadAssembly(assembly);
 		}
 
-#if UNITY_EDITOR
 		// Load assemblies for the `UnityEditor*` namespaces
-		foreach (var assembly in GetAssembliesInNamespace("UnityEditor"))
+		if (Application.isEditor)
 		{
-			engine.Runtime.LoadAssembly(assembly);
+			foreach (var assembly in GetAssembliesInNamespace("UnityEditor"))
+			{
+				engine.Runtime.LoadAssembly(assembly);
+			}
 		}
-#endif
 
 		return engine;
 	}
