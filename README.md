@@ -13,9 +13,6 @@ Place the source of this project anywhere in the "Assets" folder. For
 convenience, you can use the latest `.unitypackage` release from the
 [releases][] page to do this.
 
-Then, go to `Edit > Project Settings > Player > Other Settings > Configuration`
-and change Scripting Runtime Version to "Experimental (.NET 4.6 Equivalent)".
-
 
 Usage
 =====
@@ -40,5 +37,6 @@ An example is provided below. More examples can be found in the
 			Debug.Log(scope.GetVariable<string>("str"));
 		}
 	}
-	
+
+
 [releases]: https://github.com/exodrifter/unity-python/releases
