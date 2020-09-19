@@ -40,6 +40,9 @@ Place the source of this project anywhere in the "Assets" folder. For
 convenience, you can use the latest `.unitypackage` release from the
 [releases][] page to do this.
 
+Then, go to `Edit > Project Settings > Player > Other Settings > Configuration`
+and change `Api Compatability Level` to ".NET 4.x"
+
 
 Usage
 =====
