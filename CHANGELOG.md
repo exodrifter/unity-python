@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+* Add a package.json file so this repository be imported in Unity using the
+  package manager window.
+
 
 ## [0.5.0]
 

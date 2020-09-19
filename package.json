@@ -1,0 +1,17 @@
+{
+  "name": "space.exodrifter.python",
+  "version": "0.5.0",
+  "displayName": "Python",
+  "description": "IronPython wrapper library for Unity3D.",
+  "unity": "2019.4",
+  "unityRelease": "10f1",
+  "keywords": [
+    "python"
+  ],
+  "author": {
+    "name": "exodrifter",
+    "email": "exodrifter@gmail.com",
+    "url": "https://exodrifter.space"
+  },
+  "type": "library"
+}

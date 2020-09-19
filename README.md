@@ -1,5 +1,4 @@
-UnityPython
-===========
+# UnityPython
 UnityPython is a plugin for Unity3D that provides support for running Python
 2.x code in Unity3D on any platform which supports `System.Reflection.Emit`.
 
@@ -7,8 +6,7 @@ Special thanks to the developers of IronPython who developed the open-source
 integration of Python and .NET, which this plugin uses.
 
 
-Requirements
-============
+## Requirements
 The build target must support `System.Reflection.Emit`. In the Unity3D docs, you
 can find an up-to-date detailed list of which platforms support `Emit` or not
 [here](https://docs.unity3d.com/Manual/ScriptingRestrictions.html).
@@ -25,7 +23,7 @@ As of Unity3D 2019.4 LTS, here is a chart of platform support for `Emit`:
 | Standalone (Mono)                   | Yes                                    |
 | Switch (IL2CPP)                     | No                                     |
 | Universal Windows Platform (IL2CPP) | No                                     |
-| Universal Windows Platform (.NET)   | Maybe*                                 |
+| Universal Windows Platform (.NET)   | Maybe\*                                |
 | WebGL (IL2CPP)                      | No                                     |
 | WiiU (Mono)                         | Yes                                    |
 | XBox One (IL2CPP)                   | No                                     |
@@ -34,18 +32,20 @@ As of Unity3D 2019.4 LTS, here is a chart of platform support for `Emit`:
    libraries subset" but fails to state what libraries are included in that
    subset. If you know the answer to this question, please open a PR.
 
-Setup
-=====
-Place the source of this project anywhere in the "Assets" folder. For
-convenience, you can use the latest `.unitypackage` release from the
-[releases][] page to do this.
+
+## Setup
+There are three different ways to use this library in Unity:
+* Use the `Add package from git URL...` option in Unity's package manager and
+  use the git URL of this repository.
+* Clone this repository into your Unity project. Or, if your Unity project is
+  already a git repository, add this repository as a submodule.
+* Download and install the latest [`.unitypackage` release][releases]
 
 Then, go to `Edit > Project Settings > Player > Other Settings > Configuration`
 and change `Api Compatability Level` to ".NET 4.x"
 
 
-Usage
-=====
+## Usage
 An example is provided below. More examples can be found in the
 `Examples/` folder.
 
